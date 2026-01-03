@@ -5,8 +5,14 @@
   <title>PDF to Image Converter</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- PDF.js CDN -->
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- FileSaver -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
 
@@ -14,6 +20,8 @@
 
   <input type="file" id="pdfInput" accept="application/pdf">
   <p id="status"></p>
+
+  <button id="downloadZip" disabled>Download ZIP</button>
 
   <div id="output"></div>
 
