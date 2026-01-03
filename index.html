@@ -16,15 +16,32 @@
 </head>
 <body>
 
-  <h2>PDF to Image Converter</h2>
+<h2>PDF → Image Converter</h2>
 
+<div id="dropZone">
+  Drag & Drop PDF here<br>or click to upload
   <input type="file" id="pdfInput" accept="application/pdf">
-  <p id="status"></p>
+</div>
 
-  <button id="downloadZip" disabled>Download ZIP</button>
+<div class="controls">
+  <input type="text" id="pageRange" placeholder="Pages (e.g. 1,3,5-7)">
 
-  <div id="output"></div>
+  <select id="format">
+    <option value="png">PNG</option>
+    <option value="jpg">JPG</option>
+  </select>
 
-  <script src="script.js"></script>
+  <select id="quality">
+    <option value="high">High Quality</option>
+    <option value="low">Low Quality</option>
+  </select>
+</div>
+
+<button id="downloadZip" disabled>Download ZIP</button>
+
+<p id="status"></p>
+<div id="output"></div>
+
+<script src="script.js"></script>
 </body>
 </html>
