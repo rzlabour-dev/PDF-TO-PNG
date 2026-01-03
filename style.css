@@ -26,3 +26,10 @@ input {
   border: 1px solid #ccc;
   background: white;
 }
+button {
+  padding: 10px 15px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
