@@ -8,57 +8,62 @@ const pageRangeInput = document.getElementById("pageRange");
 const formatSelect = document.getElementById("format");
 const qualitySelect = document.getElementById("quality");
 
-let zip = null;
-let totalPagesToExport = 0;
+const zip = new JSZip();
+let imageCount = 0;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 /* ---------- Drag & Drop ---------- */
-dropZone.onclick = () => input.click();
-dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add("hover"); };
-dropZone.ondragleave = () => dropZone.classList.remove("hover");
-dropZone.ondrop = e => {
+dropZone.addEventListener("click", () => input.click());
+
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.classList.add("hover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+  dropZone.classList.remove("hover");
+});
+
+dropZone.addEventListener("drop", e => {
   e.preventDefault();
   dropZone.classList.remove("hover");
   handleFile(e.dataTransfer.files[0]);
-};
-input.onchange = () => handleFile(input.files[0]);
+});
+
+input.addEventListener("change", () => handleFile(input.files[0]));
 
 /* ---------- Page Range Parser ---------- */
 function parsePages(range, total) {
   if (!range) return [...Array(total).keys()].map(i => i + 1);
+
   let pages = new Set();
-  range.split(",").forEach(p => {
-    if (p.includes("-")) {
-      let [s, e] = p.split("-").map(Number);
+  range.split(",").forEach(part => {
+    if (part.includes("-")) {
+      let [s, e] = part.split("-").map(Number);
       for (let i = s; i <= e; i++) pages.add(i);
-    } else pages.add(Number(p));
+    } else {
+      pages.add(Number(part));
+    }
   });
   return [...pages].filter(p => p >= 1 && p <= total);
 }
 
-/* ---------- MAIN ---------- */
+/* ---------- Main Logic ---------- */
 async function handleFile(file) {
   if (!file) return;
 
   output.innerHTML = "";
-  downloadBtn.style.display = "none";
-  zip = null;
+  zip.files = {};
+  imageCount = 0;
+  downloadBtn.disabled = true;
   statusText.textContent = "Processing PDF...";
 
   const reader = new FileReader();
   reader.onload = async () => {
     const pdf = await pdfjsLib.getDocument(new Uint8Array(reader.result)).promise;
     const pages = parsePages(pageRangeInput.value, pdf.numPages);
-
-    totalPagesToExport = pages.length;
-
-    // ✅ DECIDE MODE FIRST
-    if (totalPagesToExport >= 3) {
-      zip = new JSZip();
-      downloadBtn.style.display = "inline-block";
-    }
 
     for (const pageNum of pages) {
       const page = await pdf.getPage(pageNum);
@@ -77,34 +82,17 @@ async function handleFile(file) {
 
       const format = formatSelect.value;
       const mime = format === "jpg" ? "image/jpeg" : "image/png";
-      const quality =
-        format === "jpg"
-          ? (qualitySelect.value === "low" ? 0.6 : 0.95)
-          : undefined;
+      const quality = format === "jpg" && qualitySelect.value === "low" ? 0.6 : 0.92;
 
       canvas.toBlob(blob => {
-        const filename = `page_${pageNum}.${format}`;
-        const url = URL.createObjectURL(blob);
+        imageCount++;
+        zip.file(`page_${pageNum}.${format}`, blob);
 
-        // Preview
         const img = document.createElement("img");
-        img.src = url;
+        img.src = URL.createObjectURL(blob);
         output.appendChild(img);
 
-        // ✅ MODE 1: DIRECT DOWNLOAD (≤2 pages)
-        if (!zip) {
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          a.textContent = `Download ${filename}`;
-          a.style.display = "block";
-          a.style.marginBottom = "10px";
-          output.appendChild(a);
-        }
-        // ✅ MODE 2: ZIP (≥3 pages)
-        else {
-          zip.file(filename, blob);
-        }
+        downloadBtn.disabled = false;
       }, mime, quality);
     }
 
@@ -114,11 +102,10 @@ async function handleFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-/* ---------- ZIP DOWNLOAD ---------- */
-downloadBtn.onclick = async () => {
-  if (!zip) return;
+/* ---------- ZIP Download ---------- */
+downloadBtn.addEventListener("click", async () => {
   statusText.textContent = "Preparing ZIP...";
   const content = await zip.generateAsync({ type: "blob" });
   saveAs(content, "pdf-images.zip");
   statusText.textContent = "ZIP downloaded ✔";
-};
+});
